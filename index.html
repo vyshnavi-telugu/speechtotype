@@ -1,326 +1,160 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Voice → Perfect Text (Single-File)</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Voice-to-Text & Text-to-Voice App</title>
   <style>
-    :root{
-      --fg:#0f172a;--muted:#475569;--bg:#f8fafc;--card:#ffffff;--accent:#2563eb;--ring:rgba(37,99,235,.15);
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      background: #f8f9fa;
     }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:var(--fg);background:linear-gradient(180deg,#f1f5f9,#f8fafc)}
-    .wrap{max-width:960px;margin:40px auto;padding:0 16px}
-    .card{background:var(--card);border-radius:20px;box-shadow:0 20px 50px rgba(2,6,23,.08);padding:20px 20px}
-    h1{margin:0 0 6px;font-size:28px}
-    p.sub{margin:0 0 18px;color:var(--muted)}
-    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-    .controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-    button{border:0;border-radius:12px;padding:10px 14px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;box-shadow:0 8px 20px var(--ring);transition:transform .06s ease}
-    button:active{transform:translateY(1px)}
-    button.ghost{background:#eef2ff;color:#1e293b}
-    button:disabled{opacity:.6;cursor:not-allowed}
-    select,input[type="checkbox"]{accent-color:var(--accent)}
-    select{padding:10px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
-    label.chk{display:inline-flex;gap:8px;align-items:center;color:var(--muted);font-size:14px;padding:6px 10px;border:1px solid #e2e8f0;border-radius:999px;background:#fff}
-    #status{min-height:20px;color:var(--muted);margin-top:2px}
-    textarea{width:100%;min-height:240px;border:1px solid #e5e7eb;border-radius:16px;padding:14px;font-size:16px;line-height:1.6;background:#fff;resize:vertical}
-    .meta{display:flex;gap:12px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:14px;margin-top:8px}
-    .pill{padding:6px 10px;border-radius:999px;background:#eef2ff}
-    .hint{font-size:13px;color:var(--muted)}
-    footer{margin-top:18px;color:#94a3b8;font-size:12px}
-    .badge{display:inline-flex;gap:6px;align-items:center;background:#ecfeff;border:1px solid #bae6fd;color:#0369a1;padding:6px 10px;border-radius:999px}
-    .flex-between{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    h1 { color: #333; }
+    button, select {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 8px;
+      border: none;
+      background: #007bff;
+      color: white;
+    }
+    button:hover, select:hover { background: #0056b3; }
+    textarea {
+      width: 80%;
+      height: 200px;
+      margin: 20px auto;
+      display: block;
+      font-size: 16px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <div class="flex-between">
-        <div>
-          <h1>🎤 Voice → Perfect Text</h1>
-          <p class="sub">Single-file app using your browser’s speech recognition. No server, no installs.</p>
-        </div>
-        <span id="supportBadge" class="badge" title="Browser support check">Checking support…</span>
-      </div>
+  <h1>🎤 Voice ↔ Text AI App</h1>
+  <button id="startBtn">Start Voice</button>
+  <button id="stopBtn">Stop Voice</button>
+  <button id="refineBtn">AI Refine</button>
+  <button id="translateBtn">Translate</button>
+  <button id="speakBtn">Speak Text</button>
+  <button id="saveTxtBtn">Save TXT</button>
+  <button id="savePdfBtn">Save PDF</button>
+  <br />
+  <select id="languageSelect">
+    <option value="en">English</option>
+    <option value="es">Spanish</option>
+    <option value="fr">French</option>
+    <option value="hi">Hindi</option>
+    <option value="te">Telugu</option>
+  </select>
+  <select id="voiceSelect"></select>
+  <textarea id="output" placeholder="Your text will appear here..."></textarea>
 
-      <div class="row">
-        <div class="controls">
-          <button id="startBtn">Start Recording</button>
-          <button id="stopBtn" class="ghost" disabled>Stop</button>
-
-          <select id="lang">
-            <option value="en-IN">English (India)</option>
-            <option value="en-US" selected>English (US)</option>
-            <option value="hi-IN">Hindi (India)</option>
-            <option value="te-IN">Telugu (India)</option>
-            <option value="ta-IN">Tamil (India)</option>
-            <option value="ml-IN">Malayalam (India)</option>
-            <option value="kn-IN">Kannada (India)</option>
-            <option value="bn-IN">Bengali (India)</option>
-            <option value="mr-IN">Marathi (India)</option>
-            <option value="gu-IN">Gujarati (India)</option>
-            <option value="pa-IN">Punjabi (India)</option>
-            <option value="ur-IN">Urdu (India)</option>
-            <option value="hi">Hindi</option>
-            <option value="te">Telugu</option>
-            <option value="ta">Tamil</option>
-            <option value="ml">Malayalam</option>
-            <option value="kn">Kannada</option>
-            <option value="bn">Bengali</option>
-            <option value="mr">Marathi</option>
-            <option value="gu">Gujarati</option>
-            <option value="pa">Punjabi</option>
-            <option value="">Auto</option>
-          </select>
-
-          <label class="chk">
-            <input type="checkbox" id="interim" checked />
-            <span>Show interim</span>
-          </label>
-
-          <label class="chk" title="Lightweight client-side cleanup (does not invent words)">
-            <input type="checkbox" id="refine" checked />
-            <span>Refine punctuation</span>
-          </label>
-
-          <label class="chk" title="Start each sentence with uppercase">
-            <input type="checkbox" id="smartCase" checked />
-            <span>Smart casing</span>
-          </label>
-        </div>
-      </div>
-
-      <div id="status" class="hint">Idle.</div>
-
-      <textarea id="out" placeholder="Your transcript will appear here…"></textarea>
-
-      <div class="row">
-        <button id="copyBtn" class="ghost">Copy</button>
-        <button id="downloadBtn" class="ghost">Download .txt</button>
-        <button id="clearBtn" class="ghost">Clear</button>
-        <span class="meta">
-          <span class="pill" id="stats">0 words · 0 segments</span>
-          <span class="hint" id="engineHint">Engine: Web Speech API</span>
-        </span>
-      </div>
-
-      <footer>
-        Tip: For best results, use a quiet room and a Chromium-based browser. Some browsers require HTTPS for mic access when hosted online.
-      </footer>
-    </div>
-  </div>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
-    // ---- Feature & support detection
-    const supportEl = document.getElementById('supportBadge');
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const supported = !!SpeechRec;
-    if (supported) {
-      supportEl.textContent = '✅ Speech recognition available';
+    let recognition, isRecording = false;
+    const output = document.getElementById("output");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const refineBtn = document.getElementById("refineBtn");
+    const translateBtn = document.getElementById("translateBtn");
+    const speakBtn = document.getElementById("speakBtn");
+    const saveTxtBtn = document.getElementById("saveTxtBtn");
+    const savePdfBtn = document.getElementById("savePdfBtn");
+    const languageSelect = document.getElementById("languageSelect");
+    const voiceSelect = document.getElementById("voiceSelect");
+
+    // =============== Speech Recognition ===============
+    if ("webkitSpeechRecognition" in window) {
+      recognition = new webkitSpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onresult = function(event) {
+        let transcript = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          transcript += event.results[i][0].transcript;
+        }
+        output.value = transcript;
+      };
     } else {
-      supportEl.textContent = '⚠️ Not supported (try Chrome)';
-      supportEl.style.background = '#fff1f2';
-      supportEl.style.borderColor = '#fecdd3';
-      supportEl.style.color = '#9f1239';
+      alert("Speech Recognition not supported in this browser.");
     }
 
-    // ---- DOM refs
-    const startBtn = document.getElementById('startBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const out = document.getElementById('out');
-    const statusEl = document.getElementById('status');
-    const statsEl = document.getElementById('stats');
-    const langSel = document.getElementById('lang');
-    const interimChk = document.getElementById('interim');
-    const refineChk = document.getElementById('refine');
-    const smartCaseChk = document.getElementById('smartCase');
-    const copyBtn = document.getElementById('copyBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const clearBtn = document.getElementById('clearBtn');
+    startBtn.onclick = () => {
+      recognition.lang = languageSelect.value === "en" ? "en-US" : languageSelect.value;
+      recognition.start();
+      isRecording = true;
+    };
 
-    // ---- State
-    let recognizer = null;
-    let running = false;
-    let segments = 0;
-    let interimBuffer = '';
+    stopBtn.onclick = () => {
+      recognition.stop();
+      isRecording = false;
+    };
 
-    // ---- Helpers: light refine (punctuation + casing)
-    function normalizeSpaces(s){ return s.replace(/\s+/g,' ').replace(/\s+([.,!?;:])/g,'$1').trim(); }
+    // =============== AI Refinement (Dummy for now) ===============
+    refineBtn.onclick = async () => {
+      // For better results, integrate OpenAI API here
+      let text = output.value;
+      // Simulate grammar fix
+      text = text.charAt(0).toUpperCase() + text.slice(1);
+      if (!text.endsWith(".")) text += ".";
+      output.value = text;
+    };
 
-    function smartPunctuate(text){
-      // Add sentence-ending punctuation heuristically when user pauses.
-      // Only if last char looks like a letter/number.
-      if(!text) return text;
-      const trimmed = text.trim();
-      if(!trimmed) return trimmed;
-      const last = trimmed[trimmed.length-1];
-      if(/[a-zA-Z0-9\u0900-\u0D7F\u0E00-\u17FF]$/.test(last)){ // covers many Indic ranges loosely
-        return trimmed + '.';
-      }
-      return trimmed;
+    // =============== Translation (Dummy) ===============
+    translateBtn.onclick = () => {
+      // For real translation, use an API like Google Translate or GPT
+      output.value = "[Translated version here]";
+    };
+
+    // =============== Text-to-Speech ===============
+    function populateVoices() {
+      const voices = speechSynthesis.getVoices();
+      voiceSelect.innerHTML = "";
+      voices.forEach((voice, i) => {
+        const option = document.createElement("option");
+        option.value = i;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+      });
     }
 
-    function sentenceCase(text){
-      // Capitalize first letter after . ! ? and at start.
-      return text
-        .replace(/(^\s*[a-z\u0900-\u0D7F])|([.!?]\s+[a-z\u0900-\u0D7F])/g, m => m.toUpperCase());
-    }
+    speakBtn.onclick = () => {
+      const utterance = new SpeechSynthesisUtterance(output.value);
+      const voices = speechSynthesis.getVoices();
+      utterance.voice = voices[voiceSelect.value] || voices[0];
+      speechSynthesis.speak(utterance);
+    };
 
-    function refineText(s){
-      let t = normalizeSpaces(s);
-      if(refineChk.checked){ t = smartPunctuate(t); }
-      if(smartCaseChk.checked){ t = sentenceCase(t); }
-      return t;
-    }
+    speechSynthesis.onvoiceschanged = populateVoices;
 
-    function updateStats(){
-      const words = (out.value.trim() ? out.value.trim().split(/\s+/).length : 0);
-      statsEl.textContent = `${words} ${words===1?'word':'words'} · ${segments} ${segments===1?'segment':'segments'}`;
-    }
+    // =============== Export Options ===============
+    saveTxtBtn.onclick = () => {
+      const blob = new Blob([output.value], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "transcript.txt";
+      link.click();
+    };
 
-    function setBusy(b){
-      startBtn.disabled = b;
-      stopBtn.disabled = !b;
-    }
-
-    // ---- Recognition logic (continuous with auto-restart)
-    function startRecognition(){
-      if(!supported) {
-        statusEl.textContent = 'Speech recognition not supported in this browser.';
-        return;
-      }
-      if(running) return;
-
-      recognizer = new SpeechRec();
-      recognizer.lang = langSel.value || 'en-US';
-      recognizer.continuous = true;
-      recognizer.interimResults = interimChk.checked;
-
-      recognizer.onstart = () => {
-        running = true;
-        setBusy(true);
-        statusEl.textContent = 'Listening… Speak clearly. (Stop when done)';
-      };
-
-      recognizer.onerror = (e) => {
-        statusEl.textContent = `Error: ${e.error || 'unknown'}`;
-      };
-
-      recognizer.onresult = (event) => {
-        let finalChunk = '';
-        let interimChunk = '';
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const res = event.results[i];
-          if (res.isFinal) {
-            let txt = res[0].transcript;
-            if (refineChk.checked || smartCaseChk.checked) {
-              txt = refineText(txt);
-            } else {
-              txt = normalizeSpaces(txt);
-            }
-            finalChunk += ' ' + txt;
-            segments++;
-          } else if (interimChk.checked) {
-            interimChunk += ' ' + res[0].transcript;
-          }
-        }
-
-        // Combine: base (existing text) + final + [interim dimmed]
-        if (finalChunk) {
-          interimBuffer = ''; // reset interim when we got finals
-          out.value = (out.value + ' ' + finalChunk).trim();
-          updateStats();
-        } else if (interimChk.checked) {
-          interimBuffer = interimChunk;
-        }
-
-        // Show interim visually in status (do not insert into textarea to avoid mixing)
-        if (interimChk.checked && interimBuffer.trim()){
-          statusEl.textContent = 'Interim: ' + interimBuffer.trim();
-        } else if (running){
-          statusEl.textContent = 'Listening…';
-        }
-      };
-
-      recognizer.onend = () => {
-        // Chrome often ends after a pause; auto-restart if user hasn't pressed Stop
-        if (running) {
-          try { recognizer.start(); } catch {}
-        } else {
-          setBusy(false);
-          statusEl.textContent = 'Stopped.';
-        }
-      };
-
-      try {
-        recognizer.start();
-      } catch (e) {
-        statusEl.textContent = 'Failed to start. Check mic permissions.';
-      }
-    }
-
-    function stopRecognition(){
-      running = false;
-      interimBuffer = '';
-      if (recognizer) {
-        try { recognizer.stop(); } catch {}
-        recognizer = null;
-      }
-      setBusy(false);
-    }
-
-    // ---- UI handlers
-    startBtn.addEventListener('click', startRecognition);
-    stopBtn.addEventListener('click', stopRecognition);
-
-    copyBtn.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(out.value || '');
-        statusEl.textContent = 'Copied to clipboard.';
-        setTimeout(()=> statusEl.textContent = running ? 'Listening…' : 'Idle.', 1200);
-      } catch {
-        statusEl.textContent = 'Copy failed.';
-      }
-    });
-
-    downloadBtn.addEventListener('click', () => {
-      const blob = new Blob([out.value || ''], {type:'text/plain'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      const ts = new Date().toISOString().replace(/[:.]/g,'-');
-      a.href = url;
-      a.download = `transcript-${ts}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    });
-
-    clearBtn.addEventListener('click', () => {
-      out.value = '';
-      segments = 0;
-      updateStats();
-      statusEl.textContent = 'Cleared.';
-      setTimeout(()=> statusEl.textContent = running ? 'Listening…' : 'Idle.', 900);
-    });
-
-    langSel.addEventListener('change', () => {
-      if (running) {
-        // Apply new language immediately by restarting quietly
-        stopRecognition();
-        startRecognition();
-      }
-    });
-
-    interimChk.addEventListener('change', () => {
-      if (recognizer) recognizer.interimResults = interimChk.checked;
-      if (!interimChk.checked) statusEl.textContent = running ? 'Listening…' : 'Idle.';
-    });
-
-    // Initialize stats
-    updateStats();
+    savePdfBtn.onclick = () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.text(output.value, 10, 10);
+      doc.save("transcript.pdf");
+    };
   </script>
 </body>
 </html>
+
+
+     
+      
