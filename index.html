@@ -3,70 +3,46 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Voice-to-Text & Text-to-Voice App</title>
+  <title>AI Voice ↔ Text App</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 0;
-      padding: 20px;
-      background: #f8f9fa;
-    }
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f8f9fa; }
     h1 { color: #333; }
-    button, select {
-      margin: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      border-radius: 8px;
-      border: none;
-      background: #007bff;
-      color: white;
-    }
+    button, select { margin: 5px; padding: 10px 20px; font-size: 16px; border: none; border-radius: 6px; background: #007bff; color: white; cursor: pointer; }
     button:hover, select:hover { background: #0056b3; }
-    textarea {
-      width: 80%;
-      height: 200px;
-      margin: 20px auto;
-      display: block;
-      font-size: 16px;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
+    textarea { width: 80%; height: 200px; margin: 20px auto; display: block; padding: 10px; font-size: 16px; border-radius: 6px; border: 1px solid #ccc; }
+    label { display: block; margin-top: 10px; font-weight: bold; }
   </style>
 </head>
 <body>
-  <h1>🎤 Voice ↔ Text AI App</h1>
+  <h1>🎤 AI Voice ↔ Text App</h1>
   <button id="startBtn">Start Voice</button>
   <button id="stopBtn">Stop Voice</button>
   <button id="refineBtn">AI Refine</button>
   <button id="translateBtn">Translate</button>
-  <button id="speakBtn">Speak Text</button>
+  <button id="speakBtn">Speak</button>
   <button id="saveTxtBtn">Save TXT</button>
   <button id="savePdfBtn">Save PDF</button>
+
   <br />
+  <label for="languageSelect">Select Language:</label>
   <select id="languageSelect">
-    <option value="en">English</option>
-    <option value="es">Spanish</option>
-    <option value="fr">French</option>
-    <option value="hi">Hindi</option>
-    <option value="te">Telugu</option>
+    <option value="en-US">English (US)</option>
+    <option value="en-GB">English (UK)</option>
+    <option value="es-ES">Spanish</option>
+    <option value="fr-FR">French</option>
+    <option value="hi-IN">Hindi</option>
+    <option value="te-IN">Telugu</option>
   </select>
+
+  <label for="voiceSelect">Select Voice:</label>
   <select id="voiceSelect"></select>
+
   <textarea id="output" placeholder="Your text will appear here..."></textarea>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
-    let recognition, isRecording = false;
+    let recognition;
     const output = document.getElementById("output");
-    const startBtn = document.getElementById("startBtn");
-    const stopBtn = document.getElementById("stopBtn");
-    const refineBtn = document.getElementById("refineBtn");
-    const translateBtn = document.getElementById("translateBtn");
-    const speakBtn = document.getElementById("speakBtn");
-    const saveTxtBtn = document.getElementById("saveTxtBtn");
-    const savePdfBtn = document.getElementById("savePdfBtn");
     const languageSelect = document.getElementById("languageSelect");
     const voiceSelect = document.getElementById("voiceSelect");
 
@@ -85,37 +61,39 @@
         output.value = transcript;
       };
     } else {
-      alert("Speech Recognition not supported in this browser.");
+      alert("Speech Recognition not supported in this browser");
     }
 
-    startBtn.onclick = () => {
-      recognition.lang = languageSelect.value === "en" ? "en-US" : languageSelect.value;
+    document.getElementById("startBtn").onclick = () => {
+      recognition.lang = languageSelect.value;
       recognition.start();
-      isRecording = true;
+    };
+    document.getElementById("stopBtn").onclick = () => recognition.stop();
+
+    // =============== AI Refine ===============
+    document.getElementById("refineBtn").onclick = async () => {
+      const res = await fetch("http://localhost:5000/refine", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: output.value })
+      });
+      const data = await res.json();
+      output.value = data.refined || output.value;
     };
 
-    stopBtn.onclick = () => {
-      recognition.stop();
-      isRecording = false;
+    // =============== Translation ===============
+    document.getElementById("translateBtn").onclick = async () => {
+      const lang = languageSelect.value;
+      const res = await fetch("http://localhost:5000/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: output.value, lang })
+      });
+      const data = await res.json();
+      output.value = data.translated || output.value;
     };
 
-    // =============== AI Refinement (Dummy for now) ===============
-    refineBtn.onclick = async () => {
-      // For better results, integrate OpenAI API here
-      let text = output.value;
-      // Simulate grammar fix
-      text = text.charAt(0).toUpperCase() + text.slice(1);
-      if (!text.endsWith(".")) text += ".";
-      output.value = text;
-    };
-
-    // =============== Translation (Dummy) ===============
-    translateBtn.onclick = () => {
-      // For real translation, use an API like Google Translate or GPT
-      output.value = "[Translated version here]";
-    };
-
-    // =============== Text-to-Speech ===============
+    // =============== Text-to-Speech with Voices ===============
     function populateVoices() {
       const voices = speechSynthesis.getVoices();
       voiceSelect.innerHTML = "";
@@ -126,18 +104,19 @@
         voiceSelect.appendChild(option);
       });
     }
+    speechSynthesis.onvoiceschanged = populateVoices;
 
-    speakBtn.onclick = () => {
+    document.getElementById("speakBtn").onclick = () => {
       const utterance = new SpeechSynthesisUtterance(output.value);
       const voices = speechSynthesis.getVoices();
-      utterance.voice = voices[voiceSelect.value] || voices[0];
+      const selectedVoice = voices[voiceSelect.value];
+      if (selectedVoice) utterance.voice = selectedVoice;
+      utterance.lang = languageSelect.value;
       speechSynthesis.speak(utterance);
     };
 
-    speechSynthesis.onvoiceschanged = populateVoices;
-
-    // =============== Export Options ===============
-    saveTxtBtn.onclick = () => {
+    // =============== Save TXT & PDF ===============
+    document.getElementById("saveTxtBtn").onclick = () => {
       const blob = new Blob([output.value], { type: "text/plain" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -145,7 +124,7 @@
       link.click();
     };
 
-    savePdfBtn.onclick = () => {
+    document.getElementById("savePdfBtn").onclick = () => {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       doc.text(output.value, 10, 10);
@@ -155,6 +134,3 @@
 </body>
 </html>
 
-
-     
-      
